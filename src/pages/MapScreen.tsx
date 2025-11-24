@@ -18,6 +18,9 @@ import { toast } from "sonner";
 import { NotificationBanner } from "@/components/NotificationBanner";
 import { MessageModal } from "@/components/MessageModal";
 import { FriendRequestModal } from "@/components/FriendRequestModal";
+import { useNotificationContext } from "@/contexts/NotificationContext";
+import { BadgeCounter } from "@/components/NotificationSystem";
+import { NotificationTestButton } from "@/components/NotificationTestButton";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
@@ -28,6 +31,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const MapScreen = () => {
   const navigate = useNavigate();
+  const { addNotification, unreadMessageCount, unreadFriendRequestCount } = useNotificationContext();
   const [isActive, setIsActive] = useState(false);
   const [showPeopleDrawer, setShowPeopleDrawer] = useState(false);
   const [pointsTracked, setPointsTracked] = useState(0);
@@ -39,8 +43,34 @@ const MapScreen = () => {
   const [showFriendRequestModal, setShowFriendRequestModal] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Mock unread messages count
-  const unreadMessagesCount = 3;
+  // Simulate receiving notifications (for demo purposes)
+  useEffect(() => {
+    // Simulate a message notification after 3 seconds
+    const messageTimer = setTimeout(() => {
+      addNotification({
+        type: "message",
+        userId: 1,
+        userName: "Sarah Johnson",
+        userAvatar: "https://i.pravatar.cc/150?img=1",
+        message: "Hi! Want to workout together?",
+      });
+    }, 3000);
+
+    // Simulate a friend request notification after 6 seconds
+    const friendRequestTimer = setTimeout(() => {
+      addNotification({
+        type: "friend_request",
+        userId: 4,
+        userName: "James Wilson",
+        userAvatar: "https://i.pravatar.cc/150?img=4",
+      });
+    }, 6000);
+
+    return () => {
+      clearTimeout(messageTimer);
+      clearTimeout(friendRequestTimer);
+    };
+  }, [addNotification]);
   
   // Friend status tracking (mock data - replace with backend later)
   const [friendStatuses, setFriendStatuses] = useState<Record<number, { status: FriendStatus; cooldownUntil?: number }>>({
@@ -295,10 +325,10 @@ const MapScreen = () => {
           style={{ width: 56, height: 56 }}
         >
           <MailIcon style={{ fontSize: 28 }} />
-          {unreadMessagesCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-              {unreadMessagesCount}
-            </span>
+          {unreadMessageCount > 0 && (
+            <div className="absolute -top-1 -right-1">
+              <BadgeCounter count={unreadMessageCount} variant="default" size="md" />
+            </div>
           )}
         </motion.button>
 
@@ -632,6 +662,9 @@ const MapScreen = () => {
           </div>
         </div>
       </Drawer>
+
+      {/* Test Notification Button (Demo Only) */}
+      <NotificationTestButton />
     </div>
   );
 };
