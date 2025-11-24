@@ -13,6 +13,7 @@ import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import LockIcon from "@mui/icons-material/Lock";
 import EmailIcon from "@mui/icons-material/Email";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { toast } from "sonner";
@@ -28,6 +29,24 @@ const Settings = () => {
     cycling: true,
     walking: true,
   });
+
+  // Privacy controls - users who can/cannot see your location
+  const [userPrivacySettings, setUserPrivacySettings] = useState<Record<number, boolean>>({
+    1: true,  // Sarah Johnson - visible
+    2: true,  // Mike Chen - visible
+    3: false, // Emma Davis - hidden
+    4: true,  // James Wilson - visible
+    5: true,  // Lisa Anderson - visible
+  });
+
+  // Mock users list (from conversations/friend requests)
+  const connectedUsers = [
+    { id: 1, name: "Sarah Johnson", avatar: "https://i.pravatar.cc/150?img=1", activity: "Running" },
+    { id: 2, name: "Mike Chen", avatar: "https://i.pravatar.cc/150?img=2", activity: "Cycling" },
+    { id: 3, name: "Emma Davis", avatar: "https://i.pravatar.cc/150?img=3", activity: "Walking" },
+    { id: 4, name: "James Wilson", avatar: "https://i.pravatar.cc/150?img=4", activity: "Running" },
+    { id: 5, name: "Lisa Anderson", avatar: "https://i.pravatar.cc/150?img=5", activity: "Walking" },
+  ];
 
   const activities = [
     { id: "running", label: "Running", icon: DirectionsRunIcon, color: "success" },
@@ -48,6 +67,19 @@ const Settings = () => {
     }));
     const activityName = activities.find(a => a.id === activityId)?.label;
     toast.success(`${activityName} ${!enabledActivities[activityId] ? 'enabled' : 'disabled'}`);
+  };
+
+  const handleUserPrivacyToggle = (userId: number, userName: string) => {
+    setUserPrivacySettings(prev => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }));
+    const isNowVisible = !userPrivacySettings[userId];
+    toast.success(
+      isNowVisible
+        ? `${userName} can now see your location`
+        : `Hidden your location from ${userName}`
+    );
   };
 
   const handleSignOut = () => {
@@ -232,11 +264,92 @@ const Settings = () => {
           </Card>
         </motion.div>
 
-        {/* Privacy Section */}
+        {/* Privacy Controls Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
+        >
+          <Card className="p-6 space-y-5 shadow-elevation-2 bg-card/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-primary/10">
+                <LockIcon className="text-primary" style={{ fontSize: 24 }} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">Privacy Controls</h2>
+                <p className="text-sm text-muted-foreground">Manage who can see your location</p>
+              </div>
+            </div>
+
+            {connectedUsers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No connected users yet</p>
+                <p className="text-xs mt-1">Send messages or add friends to manage privacy</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {connectedUsers.map((user, index) => {
+                  const isVisible = userPrivacySettings[user.id] ?? true;
+
+                  return (
+                    <motion.div
+                      key={user.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center justify-between p-4 rounded-xl border-2 border-border bg-background/50 hover:bg-accent/50 transition-all duration-200"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar
+                          src={user.avatar}
+                          alt={user.name}
+                          sx={{ width: 48, height: 48 }}
+                          className="flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-base truncate">{user.name}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            {user.activity === "Running" && "🏃"}
+                            {user.activity === "Cycling" && "🚴"}
+                            {user.activity === "Walking" && "🚶"}
+                            <span>{user.activity}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right hidden sm:block">
+                          <p className={`text-xs font-medium ${
+                            isVisible ? "text-success" : "text-muted-foreground"
+                          }`}>
+                            {isVisible ? "Visible" : "Hidden"}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={isVisible}
+                          onCheckedChange={() => handleUserPrivacyToggle(user.id, user.name)}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="pt-2 px-1">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <LockIcon style={{ fontSize: 14 }} className="inline mr-1 text-muted-foreground/70" />
+                Users you've hidden from won't see your location on the map. They can still send you messages.
+              </p>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Privacy & Data Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
         >
           <Card className="p-6 space-y-4 shadow-elevation-2 bg-card/50 backdrop-blur-sm">
             <h2 className="text-2xl font-bold">Privacy & Data</h2>
