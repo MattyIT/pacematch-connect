@@ -196,3 +196,88 @@ export const mockWorkoutPosts = generateMockPosts();
 export const getMockUserById = (id: number): MockUser | undefined => {
   return mockUsers.find(user => user.id === id);
 };
+
+// Mock conversation data with message request status
+export interface MockConversation {
+  id: number;
+  userId: number;
+  userName: string;
+  avatar: string;
+  lastMessage: string;
+  timestamp: number;
+  unreadCount: number;
+  isRequest?: boolean; // true if this is a message request
+}
+
+export const mockConversations: MockConversation[] = [
+  {
+    id: 1,
+    userId: 1,
+    userName: "Sarah Johnson",
+    avatar: "https://i.pravatar.cc/150?img=1",
+    lastMessage: "Hi! Want to workout together?",
+    timestamp: Date.now() - 2 * 60 * 1000, // 2 minutes ago
+    unreadCount: 1,
+    isRequest: false, // Friends - goes to Chats
+  },
+  {
+    id: 2,
+    userId: 2,
+    userName: "Mike Chen",
+    avatar: "https://i.pravatar.cc/150?img=2",
+    lastMessage: "Great to see another runner nearby!",
+    timestamp: Date.now() - 5 * 60 * 1000,
+    unreadCount: 0,
+    isRequest: false, // Friends - goes to Chats
+  },
+  {
+    id: 3,
+    userId: 3,
+    userName: "Emma Davis",
+    avatar: "https://i.pravatar.cc/150?img=3",
+    lastMessage: "Would you like to join me for a run?",
+    timestamp: Date.now() - 60 * 60 * 1000,
+    unreadCount: 2,
+    isRequest: false, // Friends - goes to Chats
+  },
+  {
+    id: 4,
+    userId: 4,
+    userName: "James Wilson",
+    avatar: "https://i.pravatar.cc/150?img=4",
+    lastMessage: "That sounds great! What time works for you?",
+    timestamp: Date.now() - 2 * 60 * 60 * 1000,
+    unreadCount: 0,
+    isRequest: false, // Friends - goes to Chats
+  },
+  {
+    id: 5,
+    userId: 5,
+    userName: "Lisa Anderson",
+    avatar: "https://i.pravatar.cc/150?img=5",
+    lastMessage: "Thanks for the run today! Let's do it again soon.",
+    timestamp: Date.now() - 24 * 60 * 60 * 1000,
+    unreadCount: 0,
+    isRequest: false, // Friends - goes to Chats
+  },
+  {
+    id: 6,
+    userId: 7,
+    userName: "Rachel Green",
+    avatar: "https://i.pravatar.cc/150?img=7",
+    lastMessage: "Hey! I saw you're into running too 🏃‍♀️",
+    timestamp: Date.now() - 3 * 60 * 60 * 1000, // 3 hours ago
+    unreadCount: 1,
+    isRequest: true, // Not friends - goes to Requests
+  },
+  {
+    id: 7,
+    userId: 9,
+    userName: "Sophie Martin",
+    avatar: "https://i.pravatar.cc/150?img=9",
+    lastMessage: "Want to be walking buddies?",
+    timestamp: Date.now() - 6 * 60 * 60 * 1000, // 6 hours ago
+    unreadCount: 1,
+    isRequest: true, // Not friends - goes to Requests
+  },
+];
