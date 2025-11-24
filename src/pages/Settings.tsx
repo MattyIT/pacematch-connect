@@ -36,8 +36,9 @@ const Settings = () => {
   ] as const;
 
   const handleVisibilityToggle = () => {
-    setIsVisible(!isVisible);
-    toast.success(isVisible ? "You're now invisible on the map" : "You're now visible on the map");
+    const newVisibility = !isVisible;
+    setIsVisible(newVisibility);
+    toast.success(newVisibility ? "You're now visible on the map" : "You're now invisible on the map");
   };
 
   const handleActivityToggle = (activityId: keyof typeof enabledActivities) => {
