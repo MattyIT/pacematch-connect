@@ -7,6 +7,7 @@ import LoginScreen from "./pages/LoginScreen";
 import ProfileSetup from "./pages/ProfileSetup";
 import MapScreen from "./pages/MapScreen";
 import Messages from "./pages/Messages";
+import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/map" element={<MapScreen />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/chat" element={<Chat />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
