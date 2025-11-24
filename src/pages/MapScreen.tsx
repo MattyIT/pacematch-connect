@@ -13,6 +13,7 @@ import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
 import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import MailIcon from "@mui/icons-material/Mail";
+import EventIcon from "@mui/icons-material/Event";
 import { Drawer } from "@mui/material";
 import Avatar from "@mui/material/Avatar";
 import { toast } from "sonner";
@@ -345,6 +346,16 @@ const MapScreen = () => {
           <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
             {sortedUsers.length}
           </span>
+        </motion.button>
+
+        {/* Events */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate("/events")}
+          className="relative touch-target bg-card text-foreground rounded-full shadow-elevation-3 border border-border hover:border-primary transition-all"
+          style={{ width: 56, height: 56 }}
+        >
+          <EventIcon style={{ fontSize: 28 }} />
         </motion.button>
 
         {/* Messages */}

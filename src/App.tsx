@@ -10,6 +10,7 @@ import { useNotificationContext } from "@/contexts/NotificationContext";
 import LoginScreen from "./pages/LoginScreen";
 import ProfileSetup from "./pages/ProfileSetup";
 import MapScreen from "./pages/MapScreen";
+import Events from "./pages/Events";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
@@ -31,6 +32,7 @@ const AppContent = () => {
         <Route path="/" element={<LoginScreen />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
         <Route path="/map" element={<MapScreen />} />
+        <Route path="/events" element={<Events />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/settings" element={<Settings />} />
