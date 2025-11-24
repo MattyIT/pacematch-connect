@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Avatar from "@mui/material/Avatar";
 import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
@@ -21,14 +22,14 @@ import { Card } from "@/components/ui/card";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { userProfile, setUserProfile } = useUser();
   const [isVisible, setIsVisible] = useState(true);
-  const [username, setUsername] = useState("JohnDoe");
+  const [username, setUsername] = useState(userProfile?.username || "");
+  const [selectedActivities, setSelectedActivities] = useState<("running" | "cycling" | "walking")[]>(
+    userProfile?.activities || ["running"]
+  );
+  const [gender, setGender] = useState(userProfile?.gender || "");
   const [email] = useState("john.doe@example.com");
-  const [enabledActivities, setEnabledActivities] = useState({
-    running: true,
-    cycling: true,
-    walking: true,
-  });
 
   // Privacy controls - users who can/cannot see your location
   const [userPrivacySettings, setUserPrivacySettings] = useState<Record<number, boolean>>({
@@ -54,19 +55,12 @@ const Settings = () => {
     { id: "walking", label: "Walking", icon: DirectionsWalkIcon, color: "warning" },
   ] as const;
 
+  const genderOptions = ["Male", "Female", "Other", "Prefer not to say"];
+
   const handleVisibilityToggle = () => {
     const newVisibility = !isVisible;
     setIsVisible(newVisibility);
     toast.success(newVisibility ? "You're now visible on the map" : "You're now invisible on the map");
-  };
-
-  const handleActivityToggle = (activityId: keyof typeof enabledActivities) => {
-    setEnabledActivities(prev => ({
-      ...prev,
-      [activityId]: !prev[activityId],
-    }));
-    const activityName = activities.find(a => a.id === activityId)?.label;
-    toast.success(`${activityName} ${!enabledActivities[activityId] ? 'enabled' : 'disabled'}`);
   };
 
   const handleUserPrivacyToggle = (userId: number, userName: string) => {
@@ -88,7 +82,39 @@ const Settings = () => {
   };
 
   const handleSaveProfile = () => {
+    if (!username.trim()) {
+      toast.error("Username cannot be empty");
+      return;
+    }
+
+    if (selectedActivities.length === 0) {
+      toast.error("Please select at least one activity");
+      return;
+    }
+
+    // Update user profile
+    setUserProfile({
+      username: username.trim(),
+      activities: selectedActivities,
+      gender: gender || undefined,
+    });
+
     toast.success("Profile updated successfully!");
+  };
+
+  const handleActivityToggle = (activityId: "running" | "cycling" | "walking") => {
+    setSelectedActivities(prev => {
+      if (prev.includes(activityId)) {
+        // Don't allow removing the last activity
+        if (prev.length === 1) {
+          toast.error("You must have at least one activity selected");
+          return prev;
+        }
+        return prev.filter(a => a !== activityId);
+      } else {
+        return [...prev, activityId];
+      }
+    });
   };
 
   return (
@@ -200,14 +226,14 @@ const Settings = () => {
         >
           <Card className="p-6 space-y-5 shadow-elevation-2 bg-card/50 backdrop-blur-sm">
             <div>
-              <h2 className="text-2xl font-bold">Activity Types</h2>
-              <p className="text-sm text-muted-foreground mt-1">Select which activities you want to track</p>
+              <h2 className="text-2xl font-bold">Your Activities</h2>
+              <p className="text-sm text-muted-foreground mt-1">Select activities you want to track</p>
             </div>
 
             <div className="space-y-3">
               {activities.map((activity) => {
                 const Icon = activity.icon;
-                const isEnabled = enabledActivities[activity.id as keyof typeof enabledActivities];
+                const isSelected = selectedActivities.includes(activity.id as "running" | "cycling" | "walking");
                 
                 return (
                   <motion.div
@@ -215,7 +241,7 @@ const Settings = () => {
                     whileTap={{ scale: 0.98 }}
                     className={`
                       flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer
-                      ${isEnabled 
+                      ${isSelected 
                         ? activity.color === 'success'
                           ? 'border-success/30 bg-success/10'
                           : activity.color === 'primary'
@@ -224,13 +250,13 @@ const Settings = () => {
                         : 'border-border bg-muted/30'
                       }
                     `}
-                    onClick={() => handleActivityToggle(activity.id as keyof typeof enabledActivities)}
+                    onClick={() => handleActivityToggle(activity.id as "running" | "cycling" | "walking")}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${isEnabled ? activity.color === 'success' ? 'bg-success/20' : activity.color === 'primary' ? 'bg-primary/20' : 'bg-warning/20' : 'bg-muted'}`}>
+                      <div className={`p-2 rounded-lg ${isSelected ? activity.color === 'success' ? 'bg-success/20' : activity.color === 'primary' ? 'bg-primary/20' : 'bg-warning/20' : 'bg-muted'}`}>
                         <Icon 
                           className={
-                            isEnabled
+                            isSelected
                               ? activity.color === 'success'
                                 ? 'text-success'
                                 : activity.color === 'primary'
@@ -244,13 +270,13 @@ const Settings = () => {
                       <div>
                         <p className="font-semibold">{activity.label}</p>
                         <p className="text-xs text-muted-foreground">
-                          {isEnabled ? 'Available' : 'Hidden'}
+                          {isSelected ? 'Active' : 'Not selected'}
                         </p>
                       </div>
                     </div>
                     <Checkbox 
-                      checked={isEnabled}
-                      onCheckedChange={() => handleActivityToggle(activity.id as keyof typeof enabledActivities)}
+                      checked={isSelected}
+                      onCheckedChange={() => handleActivityToggle(activity.id as "running" | "cycling" | "walking")}
                       className="scale-125"
                     />
                   </motion.div>
@@ -259,8 +285,42 @@ const Settings = () => {
             </div>
 
             <p className="text-xs text-muted-foreground px-1">
-              Disabled activities will be hidden from your activity selector and won't appear in your profile.
+              Selected activities will appear in your activity selector on the map screen. You must have at least one activity selected.
             </p>
+          </Card>
+        </motion.div>
+
+        {/* Gender Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+        >
+          <Card className="p-6 space-y-4 shadow-elevation-2 bg-card/50 backdrop-blur-sm">
+            <div>
+              <h2 className="text-2xl font-bold">Gender</h2>
+              <p className="text-sm text-muted-foreground mt-1">Optional</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {genderOptions.map((option) => (
+                <motion.button
+                  key={option}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setGender(option)}
+                  className={`
+                    p-4 rounded-xl border-2 text-sm font-semibold transition-all duration-300
+                    ${
+                      gender === option
+                        ? "border-primary bg-primary/10 text-primary shadow-elevation-1"
+                        : "border-border bg-card text-foreground hover:bg-secondary hover:border-muted"
+                    }
+                  `}
+                >
+                  {option}
+                </motion.button>
+              ))}
+            </div>
           </Card>
         </motion.div>
 
