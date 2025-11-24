@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useNotificationContext } from "@/contexts/NotificationContext";
+import { BadgeCounter } from "@/components/NotificationSystem";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
 import Avatar from "@mui/material/Avatar";
@@ -19,6 +21,7 @@ interface Conversation {
 
 const Messages = () => {
   const navigate = useNavigate();
+  const { unreadMessageCount } = useNotificationContext();
   
   // Mock conversation data
   const [conversations] = useState<Conversation[]>([
