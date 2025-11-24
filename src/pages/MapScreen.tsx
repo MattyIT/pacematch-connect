@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
 import ExploreIcon from "@mui/icons-material/Explore";
@@ -31,13 +32,20 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const MapScreen = () => {
   const navigate = useNavigate();
+  const { userProfile, hasActivity } = useUser();
   const { addNotification, unreadMessageCount, unreadFriendRequestCount } = useNotificationContext();
   const [isActive, setIsActive] = useState(false);
   const [showPeopleDrawer, setShowPeopleDrawer] = useState(false);
   const [pointsTracked, setPointsTracked] = useState(0);
   const [distance, setDistance] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<"running" | "cycling" | "walking">("running");
+  
+  // Get user's enabled activities from profile
+  const userActivities = userProfile?.activities || ["running", "cycling", "walking"];
+  const [selectedActivity, setSelectedActivity] = useState<"running" | "cycling" | "walking">(
+    userActivities[0] as "running" | "cycling" | "walking"
+  );
+  
   const [selectedUser, setSelectedUser] = useState<typeof nearbyUsers[0] | null>(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showFriendRequestModal, setShowFriendRequestModal] = useState(false);
@@ -99,6 +107,11 @@ const MapScreen = () => {
     { id: "cycling", label: "Cycling", icon: DirectionsBikeIcon, color: "primary" },
     { id: "walking", label: "Walking", icon: DirectionsWalkIcon, color: "warning" },
   ] as const;
+
+  // Filter activities based on user's profile
+  const availableActivities = activities.filter(act => 
+    userActivities.includes(act.id as "running" | "cycling" | "walking")
+  );
 
   // Mock data for nearby users
   const nearbyUsers = [
@@ -548,8 +561,12 @@ const MapScreen = () => {
               className="mb-4 bg-card/95 backdrop-blur-md rounded-2xl p-5 shadow-elevation-4 border border-border/50"
             >
               <p className="text-sm font-bold mb-3 text-center">Select Activity Type</p>
-              <div className="grid grid-cols-3 gap-3">
-                {activities.map((act) => {
+              <div className={`grid gap-3 ${
+                availableActivities.length === 1 ? 'grid-cols-1' : 
+                availableActivities.length === 2 ? 'grid-cols-2' : 
+                'grid-cols-3'
+              }`}>
+                {availableActivities.map((act) => {
                   const Icon = act.icon;
                   const isSelected = selectedActivity === act.id;
                   return (
@@ -623,7 +640,7 @@ const MapScreen = () => {
             ) : (
               <>
                 <PlayArrowIcon className="mr-3" style={{ fontSize: 32 }} />
-                Start {activities.find(a => a.id === selectedActivity)?.label}
+                Start {availableActivities.find(a => a.id === selectedActivity)?.label}
               </>
             )}
           </Button>
