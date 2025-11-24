@@ -92,8 +92,15 @@ const Messages = () => {
   };
 
   const handleConversationClick = (conversation: Conversation) => {
-    // In real implementation, navigate to chat view
-    console.log("Open chat with:", conversation.userName);
+    navigate("/chat", {
+      state: {
+        user: {
+          id: conversation.userId,
+          name: conversation.userName,
+          avatar: conversation.avatar,
+        },
+      },
+    });
   };
 
   const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
