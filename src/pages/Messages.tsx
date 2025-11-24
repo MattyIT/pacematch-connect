@@ -1,77 +1,67 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useNotificationContext } from "@/contexts/NotificationContext";
-import { BadgeCounter } from "@/components/NotificationSystem";
+import { useUser } from "@/contexts/UserContext";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
 import Avatar from "@mui/material/Avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import BottomNavigation from "@/components/BottomNavigation";
-
-interface Conversation {
-  id: number;
-  userId: number;
-  userName: string;
-  avatar: string;
-  lastMessage: string;
-  timestamp: number;
-  unreadCount: number;
-}
+import { mockConversations, MockConversation } from "@/lib/mockData";
+import { 
+  acceptMessageRequest, 
+  declineMessageRequest, 
+  deleteMessageRequest,
+  isUserBlocked,
+} from "@/lib/messageStorage";
+import { toast } from "sonner";
 
 const Messages = () => {
   const navigate = useNavigate();
   const { unreadMessageCount } = useNotificationContext();
+  const { userProfile } = useUser();
+  const [activeTab, setActiveTab] = useState<"chats" | "requests">("chats");
   
-  // Mock conversation data
-  const [conversations] = useState<Conversation[]>([
-    {
-      id: 1,
-      userId: 1,
-      userName: "Sarah Johnson",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      lastMessage: "Hi! Want to workout together?",
-      timestamp: Date.now() - 2 * 60 * 1000, // 2 minutes ago
-      unreadCount: 1,
-    },
-    {
-      id: 2,
-      userId: 2,
-      userName: "Mike Chen",
-      avatar: "https://i.pravatar.cc/150?img=2",
-      lastMessage: "Great to see another runner nearby!",
-      timestamp: Date.now() - 5 * 60 * 1000, // 5 minutes ago
-      unreadCount: 0,
-    },
-    {
-      id: 3,
-      userId: 3,
-      userName: "Emma Davis",
-      avatar: "https://i.pravatar.cc/150?img=3",
-      lastMessage: "Would you like to join me for a run?",
-      timestamp: Date.now() - 60 * 60 * 1000, // 1 hour ago
-      unreadCount: 2,
-    },
-    {
-      id: 4,
-      userId: 4,
-      userName: "James Wilson",
-      avatar: "https://i.pravatar.cc/150?img=4",
-      lastMessage: "That sounds great! What time works for you?",
-      timestamp: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
-      unreadCount: 0,
-    },
-    {
-      id: 5,
-      userId: 5,
-      userName: "Lisa Anderson",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      lastMessage: "Thanks for the run today! Let's do it again soon.",
-      timestamp: Date.now() - 24 * 60 * 60 * 1000, // 1 day ago
-      unreadCount: 0,
-    },
-  ]);
+  // Filter conversations based on friend status and blocked users
+  const friends = userProfile?.friends || [];
+  const blockedUsers = mockConversations
+    .filter(conv => isUserBlocked(conv.userId))
+    .map(conv => conv.userId);
+  
+  // Split conversations into chats and requests
+  const allConversations = mockConversations
+    .filter(conv => !blockedUsers.includes(conv.userId)); // Hide blocked users
+  
+  const chatConversations = allConversations.filter(conv => {
+    // Show in Chats if: friends OR message was accepted
+    return friends.includes(conv.userId) || conv.isRequest === false;
+  });
+  
+  const requestConversations = allConversations.filter(conv => {
+    // Show in Requests if: not friends AND marked as request
+    return !friends.includes(conv.userId) && conv.isRequest === true;
+  });
+
+  const handleAcceptRequest = (conversation: MockConversation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    acceptMessageRequest(conversation.userId);
+    toast.success(`Accepted message from ${conversation.userName}`);
+    // In real app, this would trigger a re-render
+  };
+
+  const handleDeclineRequest = (conversation: MockConversation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    declineMessageRequest(conversation.userId);
+    deleteMessageRequest(conversation.userId);
+    toast.success(`Declined message from ${conversation.userName}`);
+    // In real app, this would trigger a re-render
+  };
 
   const getRelativeTime = (timestamp: number): string => {
     const now = Date.now();
@@ -95,7 +85,7 @@ const Messages = () => {
     return message.substring(0, maxLength) + "...";
   };
 
-  const handleConversationClick = (conversation: Conversation) => {
+  const handleConversationClick = (conversation: MockConversation) => {
     navigate("/chat", {
       state: {
         user: {
@@ -107,7 +97,114 @@ const Messages = () => {
     });
   };
 
-  const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+  const totalUnread = chatConversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+  const requestsCount = requestConversations.length;
+
+  const renderConversationList = (conversations: MockConversation[], showActions = false) => {
+    if (conversations.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full px-6 py-12 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <MailOutlineIcon
+              style={{ fontSize: 80 }}
+              className="text-muted-foreground/50 mb-4"
+            />
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              {showActions ? "No message requests" : "No messages yet"}
+            </h2>
+            <p className="text-muted-foreground max-w-xs">
+              {showActions 
+                ? "When someone who isn't your friend messages you, you'll see it here." 
+                : "Start a conversation by sending a message to someone nearby!"}
+            </p>
+          </motion.div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="divide-y divide-border">
+        {conversations.map((conversation, index) => (
+          <motion.div
+            key={conversation.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="relative"
+          >
+            <button
+              onClick={() => handleConversationClick(conversation)}
+              className="w-full text-left hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-3 p-4">
+                {/* Avatar */}
+                <div className="relative flex-shrink-0">
+                  <Avatar
+                    src={conversation.avatar}
+                    alt={conversation.userName}
+                    sx={{ width: 56, height: 56 }}
+                  />
+                  {conversation.unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center border-2 border-background">
+                      {conversation.unreadCount}
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <h3 className={`font-semibold text-base truncate ${
+                      conversation.unreadCount > 0 ? "text-foreground" : "text-foreground"
+                    }`}>
+                      {conversation.userName}
+                    </h3>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                      {getRelativeTime(conversation.timestamp)}
+                    </span>
+                  </div>
+                  <p className={`text-sm truncate ${
+                    conversation.unreadCount > 0
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground"
+                  }`}>
+                    {truncateMessage(conversation.lastMessage)}
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Action buttons for requests */}
+            {showActions && (
+              <div className="flex gap-2 px-4 pb-4">
+                <Button
+                  onClick={(e) => handleAcceptRequest(conversation, e)}
+                  className="flex-1 h-9 bg-primary hover:bg-primary/90"
+                  size="sm"
+                >
+                  <CheckIcon style={{ fontSize: 18 }} className="mr-1" />
+                  Accept
+                </Button>
+                <Button
+                  onClick={(e) => handleDeclineRequest(conversation, e)}
+                  variant="outline"
+                  className="flex-1 h-9"
+                  size="sm"
+                >
+                  <CloseIcon style={{ fontSize: 18 }} className="mr-1" />
+                  Delete
+                </Button>
+              </div>
+            )}
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
@@ -131,81 +228,40 @@ const Messages = () => {
             <SearchIcon style={{ fontSize: 24 }} className="text-muted-foreground" />
           </motion.button>
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chats" | "requests")} className="w-full">
+          <TabsList className="w-full grid grid-cols-2 h-12 bg-muted/30">
+            <TabsTrigger value="chats" className="relative data-[state=active]:bg-background">
+              Chats
+              {totalUnread > 0 && (
+                <span className="ml-2 px-1.5 py-0.5 text-xs font-bold bg-destructive text-destructive-foreground rounded-full min-w-[20px]">
+                  {totalUnread}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="relative data-[state=active]:bg-background">
+              Requests
+              {requestsCount > 0 && (
+                <span className="ml-2 px-1.5 py-0.5 text-xs font-bold bg-primary text-primary-foreground rounded-full min-w-[20px]">
+                  {requestsCount}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {/* Conversation List */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {conversations.length === 0 ? (
-          // Empty State
-          <div className="flex flex-col items-center justify-center h-full px-6 py-12 text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <MailOutlineIcon
-                style={{ fontSize: 80 }}
-                className="text-muted-foreground/50 mb-4"
-              />
-              <h2 className="text-xl font-bold text-foreground mb-2">
-                No messages yet
-              </h2>
-              <p className="text-muted-foreground max-w-xs">
-                Start a conversation by sending a message to someone nearby!
-              </p>
-            </motion.div>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {conversations.map((conversation, index) => (
-              <motion.button
-                key={conversation.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => handleConversationClick(conversation)}
-                className="w-full text-left hover:bg-accent transition-colors"
-              >
-                <div className="flex items-center gap-3 p-4">
-                  {/* Avatar */}
-                  <div className="relative flex-shrink-0">
-                    <Avatar
-                      src={conversation.avatar}
-                      alt={conversation.userName}
-                      sx={{ width: 56, height: 56 }}
-                    />
-                    {conversation.unreadCount > 0 && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center border-2 border-background">
-                        {conversation.unreadCount}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2 mb-1">
-                      <h3 className={`font-semibold text-base truncate ${
-                        conversation.unreadCount > 0 ? "text-foreground" : "text-foreground"
-                      }`}>
-                        {conversation.userName}
-                      </h3>
-                      <span className="text-xs text-muted-foreground flex-shrink-0">
-                        {getRelativeTime(conversation.timestamp)}
-                      </span>
-                    </div>
-                    <p className={`text-sm truncate ${
-                      conversation.unreadCount > 0
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground"
-                    }`}>
-                      {truncateMessage(conversation.lastMessage)}
-                    </p>
-                  </div>
-                </div>
-              </motion.button>
-            ))}
-          </div>
-        )}
+        <Tabs value={activeTab} className="w-full h-full">
+          <TabsContent value="chats" className="mt-0 h-full">
+            {renderConversationList(chatConversations, false)}
+          </TabsContent>
+          <TabsContent value="requests" className="mt-0 h-full">
+            {renderConversationList(requestConversations, true)}
+          </TabsContent>
+        </Tabs>
       </div>
       
       <BottomNavigation />
