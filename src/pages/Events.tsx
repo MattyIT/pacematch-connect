@@ -16,6 +16,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import MapIcon from "@mui/icons-material/Map";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import Avatar from "@mui/material/Avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -244,7 +245,7 @@ const Events = () => {
             <div className="flex items-center gap-3">
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate("/map")}
+                onClick={() => navigate("/events")}
                 className="touch-target p-2 hover:bg-secondary rounded-xl transition-all duration-200"
               >
                 <ArrowBackIcon style={{ fontSize: 28 }} />
@@ -257,30 +258,41 @@ const Events = () => {
               </div>
             </div>
 
-            {/* View Toggle */}
-            <div className="flex gap-2 bg-muted rounded-xl p-1">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setViewMode("map")}
-                className={`px-3 py-2 rounded-lg transition-all ${
-                  viewMode === "map"
-                    ? "bg-primary text-primary-foreground shadow-elevation-1"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+            {/* View Toggle & My Events */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/my-events")}
+                className="h-10"
               >
-                <MapIcon style={{ fontSize: 20 }} />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setViewMode("list")}
-                className={`px-3 py-2 rounded-lg transition-all ${
-                  viewMode === "list"
-                    ? "bg-primary text-primary-foreground shadow-elevation-1"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <ViewListIcon style={{ fontSize: 20 }} />
-              </motion.button>
+                <CheckCircleIcon className="mr-2" style={{ fontSize: 20 }} />
+                <span className="hidden sm:inline">My Events</span>
+              </Button>
+              
+              <div className="flex gap-2 bg-muted rounded-xl p-1">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setViewMode("map")}
+                  className={`px-3 py-2 rounded-lg transition-all ${
+                    viewMode === "map"
+                      ? "bg-primary text-primary-foreground shadow-elevation-1"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <MapIcon style={{ fontSize: 20 }} />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setViewMode("list")}
+                  className={`px-3 py-2 rounded-lg transition-all ${
+                    viewMode === "list"
+                      ? "bg-primary text-primary-foreground shadow-elevation-1"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <ViewListIcon style={{ fontSize: 20 }} />
+                </motion.button>
+              </div>
             </div>
           </div>
         </div>
