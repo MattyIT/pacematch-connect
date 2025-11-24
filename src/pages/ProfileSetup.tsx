@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
 import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
+  const { setUserProfile } = useUser();
   const [username, setUsername] = useState("");
   const [activities, setActivities] = useState<("running" | "cycling" | "walking")[]>(["running"]);
   const [gender, setGender] = useState("");
@@ -27,7 +29,13 @@ const ProfileSetup = () => {
       return;
     }
 
-    // TODO: Save profile data
+    // Save profile data
+    setUserProfile({
+      username: username.trim(),
+      activities,
+      gender: gender || undefined,
+    });
+
     toast.success("Profile created successfully!");
     navigate("/map");
   };

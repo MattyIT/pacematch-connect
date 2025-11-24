@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { NotificationSystem } from "@/components/NotificationSystem";
 import { useNotificationContext } from "@/contexts/NotificationContext";
 import LoginScreen from "./pages/LoginScreen";
@@ -46,9 +47,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <NotificationProvider>
-          <AppContent />
-        </NotificationProvider>
+        <UserProvider>
+          <NotificationProvider>
+            <AppContent />
+          </NotificationProvider>
+        </UserProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
