@@ -198,6 +198,16 @@ All colors MUST be HSL.
     transition: all var(--transition-fast);
   }
 
+  /* Hide scrollbar */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   /* Shadow utilities */
   .shadow-elevation-1 {
     box-shadow: var(--shadow-sm);
