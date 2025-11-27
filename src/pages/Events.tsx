@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ExploreIcon from "@mui/icons-material/Explore";
 import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
 import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
@@ -13,10 +13,10 @@ import PeopleIcon from "@mui/icons-material/People";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import StarIcon from "@mui/icons-material/Star";
 import AddIcon from "@mui/icons-material/Add";
-import ViewListIcon from "@mui/icons-material/ViewList";
-import MapIcon from "@mui/icons-material/Map";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SearchIcon from "@mui/icons-material/Search";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import EditIcon from "@mui/icons-material/Edit";
 import Avatar from "@mui/material/Avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,12 +51,14 @@ interface Event {
 
 const Events = () => {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [activityFilter, setActivityFilter] = useState<EventType | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<EventCategory>("all");
+  const [distanceFilter, setDistanceFilter] = useState<"all" | "near" | "far">("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week">("all");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Mock events data
   const events: Event[] = [
@@ -234,277 +236,189 @@ const Events = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-success/10 pb-20">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card/80 backdrop-blur-md shadow-elevation-2 sticky top-0 z-20 border-b border-border/50"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Events</h1>
-                <p className="text-sm text-muted-foreground">
-                  {sortedEvents.length} event{sortedEvents.length !== 1 ? "s" : ""} near you
-                </p>
-              </div>
-            </div>
+    <div className="relative min-h-screen bg-background overflow-hidden">
+      {/* Map Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-success/20">
+        <div className="absolute inset-0 opacity-30">
+          <div className="w-full h-full bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/-73.9712,40.7831,11/1200x800?access_token=pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbTBkZ2N6OHgwM2JrMmxzYzgzcXAxcHRoIn0.0')] bg-cover bg-center blur-sm"></div>
+        </div>
+      </div>
 
-            {/* View Toggle & My Events */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/my-events")}
-                className="h-10"
-              >
-                <CheckCircleIcon className="mr-2" style={{ fontSize: 20 }} />
-                <span className="hidden sm:inline">My Events</span>
-              </Button>
-              
-              <div className="flex gap-2 bg-muted rounded-xl p-1">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setViewMode("map")}
-                  className={`px-3 py-2 rounded-lg transition-all ${
-                    viewMode === "map"
-                      ? "bg-primary text-primary-foreground shadow-elevation-1"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <MapIcon style={{ fontSize: 20 }} />
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setViewMode("list")}
-                  className={`px-3 py-2 rounded-lg transition-all ${
-                    viewMode === "list"
-                      ? "bg-primary text-primary-foreground shadow-elevation-1"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <ViewListIcon style={{ fontSize: 20 }} />
-                </motion.button>
-              </div>
-            </div>
+      {/* Top Bar */}
+      <div className="relative z-30 p-4 space-y-3">
+        {/* Location & Battery */}
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2 text-foreground/80">
+            <LocationOnIcon style={{ fontSize: 20 }} />
+            <span className="font-medium">Nearby Events</span>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/my-events")}
+            className="text-foreground/80"
+          >
+            <BookmarkIcon style={{ fontSize: 20 }} />
+          </Button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-3 bg-card/90 backdrop-blur-md rounded-2xl px-4 py-3 shadow-elevation-2 border border-border/50">
+            <Button variant="ghost" size="sm" className="p-0 h-auto">
+              <DirectionsRunIcon className="text-warning" style={{ fontSize: 24 }} />
+              <KeyboardArrowDownIcon style={{ fontSize: 20 }} />
+            </Button>
+            <Input
+              placeholder="Search locations"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto text-base"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            className="bg-card/90 backdrop-blur-md rounded-2xl px-4 py-3 shadow-elevation-2 border border-border/50"
+          >
+            Saved
+          </Button>
+        </div>
+
+        {/* Horizontal Scrolling Filters */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setActivityFilter(activityFilter === "all" ? "running" : "all")}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${
+              activityFilter !== "all"
+                ? "bg-warning text-warning-foreground shadow-elevation-2 border-warning"
+                : "bg-card/80 backdrop-blur-sm border-border/50 text-foreground"
+            }`}
+          >
+            Activity
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setDistanceFilter(distanceFilter === "all" ? "near" : "all")}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${
+              distanceFilter !== "all"
+                ? "bg-warning text-warning-foreground shadow-elevation-2 border-warning"
+                : "bg-card/80 backdrop-blur-sm border-border/50 text-foreground"
+            }`}
+          >
+            Distance
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setDateFilter(dateFilter === "all" ? "today" : "all")}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${
+              dateFilter !== "all"
+                ? "bg-warning text-warning-foreground shadow-elevation-2 border-warning"
+                : "bg-card/80 backdrop-blur-sm border-border/50 text-foreground"
+            }`}
+          >
+            Date
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setCategoryFilter(categoryFilter === "all" ? "sponsored" : "all")}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${
+              categoryFilter !== "all"
+                ? "bg-warning text-warning-foreground shadow-elevation-2 border-warning"
+                : "bg-card/80 backdrop-blur-sm border-border/50 text-foreground"
+            }`}
+          >
+            Category
+          </motion.button>
+        </div>
+      </div>
+
+      {/* Floating Create Button */}
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.3, type: "spring" }}
+        className="fixed bottom-32 right-6 z-40"
+      >
+        <Button
+          onClick={() => setShowCreateEvent(true)}
+          className="bg-card/95 backdrop-blur-md text-foreground hover:bg-card shadow-elevation-4 rounded-2xl px-6 py-6 border border-border/50"
+        >
+          <EditIcon className="mr-2" style={{ fontSize: 20 }} />
+          <span className="font-semibold">Create Event</span>
+        </Button>
+      </motion.div>
+
+      {/* Bottom Drawer */}
+      <motion.div
+        initial={{ y: "60%" }}
+        animate={{ y: "0%" }}
+        transition={{ delay: 0.2, type: "spring", damping: 25 }}
+        className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-b from-card/95 to-card backdrop-blur-xl rounded-t-3xl shadow-elevation-4 border-t border-border/50 pb-20"
+      >
+        {/* Drawer Handle */}
+        <div className="flex justify-center pt-3 pb-4">
+          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full"></div>
+        </div>
+
+        {/* Drawer Content */}
+        <div className="px-4 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Title Section */}
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Discover Events</h2>
+            <p className="text-muted-foreground text-sm">
+              {sortedEvents.length} event{sortedEvents.length !== 1 ? "s" : ""} near you
+            </p>
+          </div>
+
+          {/* Events List */}
+          {sortedEvents.length === 0 ? (
+            <Card className="p-8 text-center bg-muted/30">
+              <EventIcon style={{ fontSize: 48 }} className="text-muted-foreground/30 mx-auto mb-3" />
+              <h3 className="text-base font-semibold mb-1">No events found</h3>
+              <p className="text-muted-foreground text-sm">
+                Try adjusting your filters
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {sortedEvents.map((event, index) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  index={index}
+                  onJoin={handleJoinEvent}
+                  onClick={() => handleEventClick(event)}
+                  getActivityIcon={getActivityIcon}
+                  getActivityColor={getActivityColor}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
 
-      {/* Filters */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="space-y-3"
-        >
-          {/* Activity Filter */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            <FilterListIcon className="text-muted-foreground flex-shrink-0" style={{ fontSize: 20 }} />
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActivityFilter("all")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                activityFilter === "all"
-                  ? "bg-primary text-primary-foreground shadow-elevation-2"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              All Activities
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActivityFilter("running")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                activityFilter === "running"
-                  ? "bg-success text-success-foreground shadow-elevation-2"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <DirectionsRunIcon style={{ fontSize: 18 }} />
-              Running
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActivityFilter("cycling")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                activityFilter === "cycling"
-                  ? "bg-primary text-primary-foreground shadow-elevation-2"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <DirectionsBikeIcon style={{ fontSize: 18 }} />
-              Cycling
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActivityFilter("walking")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                activityFilter === "walking"
-                  ? "bg-warning text-warning-foreground shadow-elevation-2"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <DirectionsWalkIcon style={{ fontSize: 18 }} />
-              Walking
-            </motion.button>
-          </div>
+      {/* Modals */}
+      <AnimatePresence>
+        {showEventDetail && selectedEvent && (
+          <EventDetailModal
+            event={selectedEvent}
+            onClose={() => setShowEventDetail(false)}
+            onJoin={handleJoinEvent}
+          />
+        )}
+      </AnimatePresence>
 
-          {/* Category Filter */}
-          <div className="flex items-center gap-2">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCategoryFilter("all")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                categoryFilter === "all"
-                  ? "bg-primary text-primary-foreground shadow-elevation-2"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              All Events
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCategoryFilter("user")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                categoryFilter === "user"
-                  ? "bg-primary text-primary-foreground shadow-elevation-2"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              Community
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCategoryFilter("sponsored")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                categoryFilter === "sponsored"
-                  ? "bg-primary text-primary-foreground shadow-elevation-2"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <StarIcon style={{ fontSize: 16 }} />
-              Sponsored
-            </motion.button>
-          </div>
-        </motion.div>
-      </div>
+      <AnimatePresence>
+        {showCreateEvent && (
+          <CreateEventModal
+            onClose={() => setShowCreateEvent(false)}
+            onCreateEvent={handleCreateEvent}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
-        <AnimatePresence mode="wait">
-          {viewMode === "map" ? (
-            <motion.div
-              key="map"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4"
-            >
-              {/* Map Placeholder */}
-              <Card className="p-8 shadow-elevation-3 border-2 border-border/50">
-                <div className="relative w-full h-[400px] bg-gradient-to-br from-primary/10 via-success/5 to-warning/10 rounded-2xl flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    >
-                      <ExploreIcon className="text-primary mx-auto" style={{ fontSize: 72 }} />
-                    </motion.div>
-                    <h3 className="text-xl font-bold">Interactive Event Map</h3>
-                    <p className="text-muted-foreground max-w-sm text-sm">
-                      Map integration will display event locations, allowing you to see all nearby events at a glance.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Events near map */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sortedEvents.slice(0, 6).map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onJoin={handleJoinEvent}
-                    onClick={() => handleEventClick(event)}
-                    getActivityIcon={getActivityIcon}
-                    getActivityColor={getActivityColor}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="list"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4"
-            >
-              {sortedEvents.length === 0 ? (
-                <Card className="p-12 text-center shadow-elevation-2">
-                  <EventIcon style={{ fontSize: 64 }} className="text-muted-foreground/30 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold mb-2">No events found</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Try adjusting your filters to see more events
-                  </p>
-                </Card>
-              ) : (
-                sortedEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onJoin={handleJoinEvent}
-                    onClick={() => handleEventClick(event)}
-                    getActivityIcon={getActivityIcon}
-                    getActivityColor={getActivityColor}
-                    listView
-                  />
-                ))
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Create Event FAB */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setShowCreateEvent(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-primary text-primary-foreground rounded-full shadow-elevation-4 hover:shadow-elevation-5 transition-all duration-300 flex items-center justify-center z-30"
-      >
-        <AddIcon style={{ fontSize: 32 }} />
-      </motion.button>
-
-      {/* Event Detail Modal */}
-      {showEventDetail && (
-        <EventDetailModal
-          event={selectedEvent}
-          onClose={() => {
-            setShowEventDetail(false);
-            setSelectedEvent(null);
-          }}
-          onJoin={handleJoinEvent}
-        />
-      )}
-
-      {/* Create Event Modal */}
-      {showCreateEvent && (
-        <CreateEventModal
-          onClose={() => setShowCreateEvent(false)}
-          onCreateEvent={handleCreateEvent}
-        />
-      )}
-      
+      {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
   );
@@ -518,86 +432,66 @@ interface EventCardProps {
   onClick: () => void;
   getActivityIcon: (type: EventType) => JSX.Element;
   getActivityColor: (type: EventType) => string;
-  listView?: boolean;
 }
 
-const EventCard = ({ event, index, onJoin, onClick, getActivityIcon, getActivityColor, listView }: EventCardProps) => {
+const EventCard = ({ event, index, onJoin, onClick, getActivityIcon, getActivityColor }: EventCardProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
       onClick={onClick}
       className="cursor-pointer"
     >
-      <Card className="overflow-hidden shadow-elevation-2 hover:shadow-elevation-3 transition-all duration-300 border-2 border-border/50 hover:border-primary/30">
-        <div className="p-5 space-y-4">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                {getActivityIcon(event.type)}
-                <h3 className="font-bold text-lg truncate">{event.title}</h3>
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-            </div>
-            {event.category === "sponsored" && (
-              <Badge variant="secondary" className="flex-shrink-0 bg-warning/10 text-warning border-warning/30">
-                <StarIcon style={{ fontSize: 14 }} className="mr-1" />
-                Sponsored
-              </Badge>
-            )}
+      <Card className="overflow-hidden hover:shadow-elevation-2 transition-all duration-200 border border-border/50 hover:border-primary/50 bg-card/80 backdrop-blur-sm">
+        <div className="flex gap-3 p-3">
+          {/* Event Image Placeholder */}
+          <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-primary/20 to-success/20 flex-shrink-0 flex items-center justify-center">
+            {getActivityIcon(event.type)}
           </div>
 
           {/* Event Info */}
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <EventIcon style={{ fontSize: 18 }} />
-              <span>{event.date} at {event.time}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <LocationOnIcon style={{ fontSize: 18 }} />
-              <span>{event.location} · {event.distance} away</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <PeopleIcon style={{ fontSize: 18 }} />
-              <span>
-                {event.participants} {event.maxParticipants ? `/ ${event.maxParticipants}` : ""} participants
+          <div className="flex-1 min-w-0 space-y-1">
+            <h3 className="font-bold text-base line-clamp-1">
+              {event.title}
+            </h3>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge 
+                variant="outline" 
+                className="text-xs border-warning/50 text-warning bg-warning/10"
+              >
+                {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {event.distance} · {event.participants} going
               </span>
+            </div>
+
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <LocationOnIcon style={{ fontSize: 14 }} />
+              <span className="truncate">{event.location}</span>
             </div>
           </div>
 
-          {/* Host/Sponsor */}
-          {event.category === "user" && event.hostName ? (
-            <div className="flex items-center gap-3 pt-2 border-t border-border">
-              <Avatar src={event.hostAvatar} alt={event.hostName} sx={{ width: 32, height: 32 }} />
-              <div>
-                <p className="text-xs text-muted-foreground">Hosted by</p>
-                <p className="text-sm font-semibold">{event.hostName}</p>
-              </div>
-            </div>
-          ) : event.sponsorLogo ? (
-            <div className="flex items-center gap-3 pt-2 border-t border-border">
-              <img src={event.sponsorLogo} alt="Sponsor" className="w-8 h-8 rounded" />
-              <p className="text-sm font-semibold text-muted-foreground">Official Sponsor Event</p>
-            </div>
-          ) : null}
-
-          {/* Action Button */}
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onJoin(event.id);
-            }}
-            className={`w-full h-11 font-semibold ${
-              event.isJoined
-                ? "bg-success/20 text-success hover:bg-success/30 border-2 border-success"
-                : ""
-            }`}
-            variant={event.isJoined ? "outline" : "default"}
-          >
-            {event.isJoined ? "✓ Joined" : "Join Event"}
-          </Button>
+          {/* Join Button */}
+          <div className="flex items-center">
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onJoin(event.id);
+              }}
+              className={`${
+                event.isJoined
+                  ? "bg-success/20 text-success border border-success/50 hover:bg-success/30"
+                  : "bg-warning text-warning-foreground hover:bg-warning/90"
+              }`}
+              variant={event.isJoined ? "outline" : "default"}
+            >
+              {event.isJoined ? "✓" : "Join"}
+            </Button>
+          </div>
         </div>
       </Card>
     </motion.div>
